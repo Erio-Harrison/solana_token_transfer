@@ -8,12 +8,7 @@ pub mod solana_token_transfer {
     use super::*;
 
     // 初始化代币
-    pub fn initialize_token(
-        ctx: Context<InitializeToken>,
-        name: String,
-        symbol: String,
-        decimals: u8,
-    ) -> Result<()> {
+    pub fn initialize_token(ctx: Context<InitializeToken>,name: String, symbol: String, decimals: u8,) -> Result<()> {
         msg!("Initializing token with name: {}, symbol: {}", name, symbol);
         let token_info = &mut ctx.accounts.token_info;
         token_info.name = name;
@@ -26,10 +21,7 @@ pub mod solana_token_transfer {
     }
 
     // 铸造代币
-    pub fn mint_token(
-        ctx: Context<MintToken>,
-        amount: u64,
-    ) -> Result<()> {
+    pub fn mint_token(ctx: Context<MintToken>,amount: u64,) -> Result<()> {
         msg!("Minting {} tokens", amount);
         token::mint_to(
             CpiContext::new(
@@ -45,12 +37,15 @@ pub mod solana_token_transfer {
         msg!("Tokens minted successfully");
         Ok(())
     }
+    // 查询代币余额
+    pub fn get_balance(ctx: Context<GetBalance>) -> Result<u64> {
+        let balance = ctx.accounts.token_account.amount;
+        msg!("The balance of the account is: {}", balance);
+        Ok(balance)
+    }
 
     // 转账代币
-    pub fn transfer_token(
-        ctx: Context<TransferToken>,
-        amount: u64,
-    ) -> Result<()> {
+    pub fn transfer_token(ctx: Context<TransferToken>,amount: u64,) -> Result<()> {
         msg!("Transferring {} tokens", amount);
         token::transfer(
             CpiContext::new(
@@ -64,6 +59,24 @@ pub mod solana_token_transfer {
             amount,
         )?;
         msg!("Tokens transferred successfully"); 
+        Ok(())
+    }
+
+    // 销毁代币
+    pub fn burn_token(ctx: Context<BurnToken>,amount: u64,) -> Result<()> {
+        msg!("Burning {} tokens", amount);
+        token::burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                token::Burn {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    from: ctx.accounts.token_account.to_account_info(),
+                    authority: ctx.accounts.authority.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+        msg!("Tokens burned successfully");
         Ok(())
     }
 }
@@ -101,6 +114,13 @@ pub struct InitializeToken<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+// 查询余额的账户验证结构
+#[derive(Accounts)]
+pub struct GetBalance<'info> {
+    #[account(mut)]
+    pub token_account: Account<'info, TokenAccount>,
+}
+
 // 铸币的账户验证结构
 #[derive(Accounts)]
 pub struct MintToken<'info> {
@@ -119,6 +139,17 @@ pub struct TransferToken<'info> {
     pub from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to: Account<'info, TokenAccount>,
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+// 销毁代币的账户验证结构
+#[derive(Accounts)]
+pub struct BurnToken<'info> {
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub token_account: Account<'info, TokenAccount>,
     pub authority: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
