@@ -93,6 +93,7 @@ pub struct TokenInfo {
 
 // 初始化代币的账户验证结构
 #[derive(Accounts)]
+#[instruction(name: String, symbol: String, decimals: u8)] 
 pub struct InitializeToken<'info> {
     #[account(
         init,
