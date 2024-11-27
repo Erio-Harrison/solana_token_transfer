@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
-declare_id!("8Ug7bHrGSb2HwxNrX3JYuSE9Ny34dLA5jX3zssGty3ai");
+declare_id!("9gUWiVPnEXmYrqe9KStaqSzq6spyqGhMpCRxVLEGk54N");
 
 #[program]
 pub mod solana_token_transfer {

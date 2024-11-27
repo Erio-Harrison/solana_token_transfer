@@ -1,5 +1,3 @@
-// app/src/App.tsx
-
 import { FC, useEffect, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';

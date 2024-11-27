@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-solana_token_transfer = "8Ug7bHrGSb2HwxNrX3JYuSE9Ny34dLA5jX3zssGty3ai"
+solana_token_transfer = "9gUWiVPnEXmYrqe9KStaqSzq6spyqGhMpCRxVLEGk54N"
 
 [registry]
 url = "https://api.apr.dev"
