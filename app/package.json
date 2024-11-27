@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "copy-idl": "mkdir -p src/idl && cp ../target/idl/solana_token_transfer.json src/idl/",
+    "dev": "npm run copy-idl && vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

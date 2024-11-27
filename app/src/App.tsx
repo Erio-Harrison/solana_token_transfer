@@ -5,7 +5,9 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Program, AnchorProvider, web3 } from '@project-serum/anchor';
 import { PublicKey } from '@solana/web3.js';
-import idl from './idl/solana_token_transfer.json';
+import IDL from './idl/solana_token_transfer.json';
+console.log('IDL:', IDL);
+
 import { 
     TOKEN_PROGRAM_ID, 
     getAssociatedTokenAddress, 
@@ -40,11 +42,17 @@ const App: FC = () => {
         if (!wallet.publicKey || !wallet.signTransaction) {
             throw new Error('Wallet not connected!');
         }
-        return new AnchorProvider(
+        const provider = new AnchorProvider(
             connection,
             wallet as any,
             { commitment: 'processed' }
         );
+        console.log('Provider details:', {
+            connection: connection.rpcEndpoint,
+            wallet: wallet.publicKey.toString(),
+            opts: provider.opts
+        });
+        return provider;
     };
 
     const initializeToken = async () => {
@@ -58,51 +66,131 @@ const App: FC = () => {
             setStatus('Initializing token...');
             
             const provider = getProvider();
-            const program = new Program(idl as any, PROGRAM_ID, provider);
     
-            // 创建 Mint 和 TokenInfo 账户的密钥对
+            // 创建正确的 IDL 格式
+            const formattedIDL = {
+                version: "0.1.0",
+                name: "solana_token_transfer",
+                instructions: [{
+                    name: "initializeToken",
+                    accounts: [
+                        {
+                            name: "tokenInfo",
+                            isMut: true,
+                            isSigner: true
+                        },
+                        {
+                            name: "mint",
+                            isMut: true,
+                            isSigner: true
+                        },
+                        {
+                            name: "authority",
+                            isMut: true,
+                            isSigner: true
+                        },
+                        {
+                            name: "systemProgram",
+                            isMut: false,
+                            isSigner: false
+                        },
+                        {
+                            name: "tokenProgram",
+                            isMut: false,
+                            isSigner: false
+                        },
+                        {
+                            name: "rent",
+                            isMut: false,
+                            isSigner: false
+                        }
+                    ],
+                    args: [
+                        {
+                            name: "name",
+                            type: "string"
+                        },
+                        {
+                            name: "symbol",
+                            type: "string"
+                        },
+                        {
+                            name: "decimals",
+                            type: "u8"
+                        }
+                    ]
+                }],
+                accounts: [
+                    {
+                        name: "TokenInfo",
+                        type: {
+                            kind: "struct",
+                            fields: [
+                                {
+                                    name: "name",
+                                    type: "string"
+                                },
+                                {
+                                    name: "symbol",
+                                    type: "string"
+                                },
+                                {
+                                    name: "decimals",
+                                    type: "u8"
+                                },
+                                {
+                                    name: "mint",
+                                    type: "publicKey"
+                                },
+                                {
+                                    name: "authority",
+                                    type: "publicKey"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            };
+    
+            const program = new Program(
+                formattedIDL,
+                PROGRAM_ID,
+                provider
+            );
+    
             const mintKeypair = web3.Keypair.generate();
             const tokenInfoKeypair = web3.Keypair.generate();
     
-            // 创建 Mint 账户的指令
-            const mintAccountIxs = await createMintAccountInstruction(
-                connection,
-                wallet.publicKey,
-                mintKeypair.publicKey,
-                Number(decimals)
-            );
+            console.log('Initializing token with params:', {
+                tokenName,
+                tokenSymbol,
+                decimals: Number(decimals),
+                mint: mintKeypair.publicKey.toString(),
+                tokenInfo: tokenInfoKeypair.publicKey.toString()
+            });
     
-            // 创建 Token 账户的指令
-            const createTokenAccountIx = await createTokenAccountInstruction(
-                connection,
-                wallet.publicKey,
-                mintKeypair.publicKey,
-                tokenInfoKeypair.publicKey
-            );
-    
-            // 组合所有指令
-            const tx = new web3.Transaction().add(
-                ...mintAccountIxs,  // 展开 mint 账户初始化指令
-                await program.methods
-                    .initializeToken(tokenName, tokenSymbol, Number(decimals))
-                    .accounts({
-                        tokenInfo: tokenInfoKeypair.publicKey,
-                        mint: mintKeypair.publicKey,
-                        authority: wallet.publicKey,
-                        systemProgram: web3.SystemProgram.programId,
-                        tokenProgram: TOKEN_PROGRAM_ID,
-                    })
-                    .instruction()
-            );
-    
-            // 发送交易
-            const signature = await provider.sendAndConfirm(tx, [mintKeypair, tokenInfoKeypair]);
+            const tx = await program.methods
+                .initializeToken(
+                    tokenName,
+                    tokenSymbol,
+                    Number(decimals)
+                )
+                .accounts({
+                    tokenInfo: tokenInfoKeypair.publicKey,
+                    mint: mintKeypair.publicKey,
+                    authority: wallet.publicKey,
+                    systemProgram: web3.SystemProgram.programId,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    rent: web3.SYSVAR_RENT_PUBKEY,
+                })
+                .signers([mintKeypair, tokenInfoKeypair])
+                .rpc();
     
             setMintAddress(mintKeypair.publicKey.toString());
-            setStatus(`Token initialized successfully! Mint address: ${mintKeypair.publicKey.toString()}\nTransaction: ${signature}`);
-            
+            setStatus(`Token initialized successfully!\nMint Address: ${mintKeypair.publicKey.toString()}\nTransaction: ${tx}`);
+    
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error details:', error);
             setStatus(`Error: ${error.message}`);
         } finally {
             setIsLoading(false);

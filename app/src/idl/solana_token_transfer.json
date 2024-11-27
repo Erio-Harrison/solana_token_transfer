@@ -8,6 +8,64 @@
   },
   "instructions": [
     {
+      "name": "burn_token",
+      "discriminator": [
+        185,
+        165,
+        216,
+        246,
+        144,
+        31,
+        70,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "token_account",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "get_balance",
+      "discriminator": [
+        5,
+        173,
+        180,
+        151,
+        243,
+        81,
+        233,
+        55
+      ],
+      "accounts": [
+        {
+          "name": "token_account",
+          "writable": true
+        }
+      ],
+      "args": [],
+      "returns": "u64"
+    },
+    {
       "name": "initialize_token",
       "discriminator": [
         38,
@@ -26,7 +84,9 @@
           "signer": true
         },
         {
-          "name": "mint"
+          "name": "mint",
+          "writable": true,
+          "signer": true
         },
         {
           "name": "authority",
@@ -40,6 +100,10 @@
         {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
       "args": [
