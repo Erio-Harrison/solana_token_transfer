@@ -191,61 +191,9 @@ const App: FC = () => {
     
         } catch (error) {
             console.error('Error details:', error);
-            setStatus(`Error: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
-    };
-    
-    // 创建 Mint 账户的辅助函数
-    const createMintAccountInstruction = async (
-        connection: web3.Connection,
-        payer: web3.PublicKey,
-        mintPubkey: web3.PublicKey,
-        decimals: number
-    ) => {
-        // 获取所需的租金
-        const lamports = await connection.getMinimumBalanceForRentExemption(
-            82
-        );
-    
-        // 创建账户
-        const createAccountIx = web3.SystemProgram.createAccount({
-            fromPubkey: payer,
-            newAccountPubkey: mintPubkey,
-            space: 82,
-            lamports,
-            programId: TOKEN_PROGRAM_ID,
-        });
-    
-        // 初始化 Mint
-        const initializeMintIx = createInitializeMintInstruction(
-            mintPubkey,    // mint pubkey
-            decimals,      // decimals
-            payer,         // mint authority
-            payer,         // freeze authority (optional)
-            TOKEN_PROGRAM_ID
-        );
-    
-        return [createAccountIx, initializeMintIx];
-    };
-    
-    // 创建 Token 账户的辅助函数
-    const createTokenAccountInstruction = async (
-        connection: web3.Connection,
-        payer: web3.PublicKey,
-        mintPubkey: web3.PublicKey,
-        tokenAccountPubkey: web3.PublicKey
-    ) => {
-        const lamports = await connection.getMinimumBalanceForRentExemption(165);
-        
-        return web3.SystemProgram.createAccount({
-            fromPubkey: payer,
-            newAccountPubkey: tokenAccountPubkey,
-            space: 165,
-            lamports,
-            programId: TOKEN_PROGRAM_ID,
-        });
     };
 
     const mintToken = async () => {
@@ -259,7 +207,7 @@ const App: FC = () => {
             setStatus('Minting tokens...');
     
             const provider = getProvider();
-            const program = new Program(idl as any, PROGRAM_ID, provider);
+            const program = new Program(IDL as any, PROGRAM_ID, provider);
             
             const mintPubkey = new PublicKey(mintAddress);
             
@@ -297,7 +245,6 @@ const App: FC = () => {
             setStatus(`Tokens minted successfully! Transaction: ${tx}`);
         } catch (error) {
             console.error('Error:', error);
-            setStatus(`Error: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -314,7 +261,7 @@ const App: FC = () => {
             setStatus('Transferring tokens...');
 
             const provider = getProvider();
-            const program = new Program(idl as any, PROGRAM_ID, provider);
+            const program = new Program(IDL as any, PROGRAM_ID, provider);
             
             const mintPubkey = new PublicKey(mintAddress);
             const fromTokenAccount = await getAssociatedTokenAddress(
@@ -339,7 +286,6 @@ const App: FC = () => {
             setStatus('Tokens transferred successfully!');
         } catch (error) {
             console.error('Error:', error);
-            setStatus(`Error: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
